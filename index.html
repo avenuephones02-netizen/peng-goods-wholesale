@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Peng Goods Wholesale — Inventory & Supplies</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--good:#047857;--warn:#b45309;--bad:#b91c1c}
+body.dark{--bg:#0f172a;--card:#1e293b;--text:#f8fafc;--muted:#94a3b8;--line:#334155;--accent:#38bdf8}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text);transition:background .2s,color .2s}
+
+/* Login Screen Styles */
+.login-screen{position:fixed;inset:0;background:#111827;z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{background:#fff;border-radius:16px;max-width:380px;width:100%;padding:32px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);color:#111827}
+.login-box h2{margin:0 0 4px;font-size:22px;text-align:center}
+.login-box p{margin:0 0 20px;font-size:13px;color:var(--muted);text-align:center}
+.login-form{display:flex;flex-direction:column;gap:12px}
+
+.app{display:flex;min-height:100vh}
+.side{width:250px;background:#111827;color:#fff;padding:22px 16px;position:fixed;inset:0 auto 0 0;z-index:10}
+.brand{font-size:20px;font-weight:800;margin:4px 8px 24px}
+.brand small{display:block;font-size:11px;color:#9ca3af;font-weight:500;margin-top:4px}
+.nav button{width:100%;border:0;background:transparent;color:#d1d5db;text-align:left;padding:12px 12px;border-radius:99px;margin:2px 0;cursor:pointer;font:inherit;transition:all .2s}
+.nav button:hover,.nav button.active{background:#374151;color:#fff;font-weight:600}
+.main{margin-left:250px;width:calc(100% - 250px);padding:24px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.top h1{margin:0;font-size:26px}
+.user{font-size:13px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:17px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.metric{font-size:26px;font-weight:800;margin-top:8px}
+.label{font-size:12px;color:var(--muted)}
+.section{margin-top:20px}
+.section h2{font-size:17px;margin:0 0 12px}
+.tablewrap{overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.table{width:100%;border-collapse:collapse;min-width:720px}
+.table th,.table td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
+.table th{color:var(--muted);font-weight:600;background:rgba(0,0,0,0.02)}
+.pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.green{background:#d1fae5;color:#065f46}
+.yellow{background:#fef3c7;color:#92400e}
+.red{background:#fee2e2;color:#991b1b}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;justify-content:space-between}
+.input,.select,.btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:9px;padding:10px 12px;font:inherit}
+.input{min-width:220px}
+.btn{cursor:pointer;background:#111827;color:#fff;border-color:#111827;font-weight:600}
+body.dark .btn{background:#38bdf8;color:#0f172a;border-color:#38bdf8}
+.btn.secondary{background:var(--card);color:var(--text);border-color:var(--line)}
+.hidden{display:none !important}
+.empty{padding:35px;text-align:center;color:var(--muted)}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:20px;z-index:99}
+.modal.open{display:flex}
+.modalbox{background:var(--card);border:1px solid var(--line);border-radius:16px;max-width:620px;width:100%;padding:22px;max-height:90vh;overflow-y:auto;color:var(--text)}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.formgrid label{font-size:12px;color:var(--muted)}
+.formgrid input,.formgrid select{width:100%;margin-top:5px}
+.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+
+@media(max-width:900px){
+  .side{width:72px;padding:18px 8px}
+  .brand{font-size:0;text-align:center}
+  .brand:before{content:"PGW";font-size:18px}
+  .brand small{display:none}
+  .nav button{font-size:0;text-align:center}
+  .nav button:before{content:"•";font-size:20px}
+  .main{margin-left:72px;width:calc(100% - 72px)}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:560px){
+  .side{width:60px}
+  .main{margin-left:60px;width:calc(100% - 60px)}
+  .top{gap:10px;align-items:flex-start}
+  .top>div:last-child{display:flex;gap:5px}
+  .top .btn{padding:8px 9px;font-size:12px}
+  .toolbar{align-items:stretch}
+  .toolbar>.input{width:100%;min-width:0}
+  .toolbar>div{width:100%}
+  .toolbar>div .btn{width:100%}
+}
+@media(max-width:560px){
+  .main{padding:14px}
+  .grid{grid-template-columns:1fr 1fr}
+  .top h1{font-size:21px}
+  .formgrid{grid-template-columns:1fr}
+  .input{min-width:160px}
+}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h2>Peng Goods Wholesale</h2>
+    <p>Enter your username and passcode PIN</p>
+    <div class="login-form">
+      <label class="label">Username</label>
+      <input type="text" class="input" id="loginUser" placeholder="admin or staff" style="width:100%">
+      <label class="label">Passcode PIN</label>
+      <input type="password" class="input" id="loginPass" placeholder="••••" style="width:100%">
+      <button class="btn" id="btnLogin" style="margin-top:8px;width:100%">Sign In</button>
+      <div id="loginError" style="color:var(--bad);font-size:12px;text-align:center;display:none;margin-top:4px;">Invalid Username or Passcode PIN!</div>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+<aside class="side">
+  <div class="brand">Peng Goods Wholesale<small>Accra • Inventory & Supplies</small></div>
+  <nav class="nav">
+    <button class="active" data-page="dashboard">Dashboard</button>
+    <button data-page="inventory">Inventory</button>
+    <button data-page="supplies">Supplies</button>
+    <button data-page="customers">Customers</button>
+    <button data-page="returns">Returns & Repairs</button>
+    <button data-page="suppliers">Suppliers</button>
+    <button data-page="expenses" id="navExpenses">Expenses</button>
+    <button data-page="associates">Associates</button>
+    <button data-page="users" id="navUsers">User Accounts</button>
+    <button data-page="activity" id="navActivity">Activity Log</button>
+  </nav>
+</aside>
+<main class="main">
+  <div class="top">
+    <div><h1 id="title">Dashboard</h1><div class="user" id="userBadge">Logged in as: -</div></div>
+    <div>
+      <button class="btn secondary" id="theme">Dark mode</button>
+      <button class="btn secondary" id="btnLogout" style="margin-left:6px;">Logout</button>
+    </div>
+  </div>
+
+  <!-- Dashboard Page -->
+  <section id="dashboard" class="page">
+    <div class="grid">
+      <div class="card"><div class="label">Phones in stock</div><div class="metric" id="mStock">0</div></div>
+      <div class="card"><div class="label">Phones supplied</div><div class="metric" id="mSupplied">0</div></div>
+      <div class="card"><div class="label">Total supply value</div><div class="metric" id="mSupplyValue">GH₵0</div></div>
+      <div class="card"><div class="label">Outstanding debt</div><div class="metric" id="mDebt">GH₵0</div></div>
+      <div class="card"><div class="label">Overdue amount</div><div class="metric" id="mOverdue">GH₵0</div></div>
+      <div class="card owner-only"><div class="label">Repair expenses</div><div class="metric" id="mRepair">GH₵0</div></div>
+      <div class="card owner-only"><div class="label">Misc. expenses</div><div class="metric" id="mMisc">GH₵0</div></div>
+      <div class="card owner-only"><div class="label">Net Profit / Loss</div><div class="metric" id="mProfit">GH₵0</div></div>
+    </div>
+    <div class="section"><h2>Today's Summary</h2><div class="grid">
+      <div class="card"><div class="label">Supplies today</div><div class="metric" id="todaySupplies">0</div></div>
+      <div class="card"><div class="label">Payments today</div><div class="metric" id="todayPayments">GH₵0</div></div>
+      <div class="card"><div class="label">Phones added today</div><div class="metric" id="todayPhones">0</div></div>
+      <div class="card"><div class="label">Returns today</div><div class="metric" id="todayReturns">0</div></div>
+    </div></div>
+  </section>
+
+  <!-- Inventory Page -->
+  <section id="inventory" class="page hidden">
+    <div class="toolbar">
+      <input class="input" id="invSearch" placeholder="Search IMEI, model, colour...">
+      <div><button class="btn" id="openAddPhone">+ Add Phone</button></div>
+    </div>
+    <div class="tablewrap"><table class="table"><thead><tr><th>IMEI</th><th>Model</th><th>Colour</th><th>Capacity</th><th>Condition</th><th class="owner-only">Cost Price</th><th>Status</th></tr></thead><tbody id="invBody"></tbody></table></div>
+  </section>
+
+  <!-- Supplies Page -->
+  <section id="supplies" class="page hidden">
+    <div class="toolbar">
+      <input class="input" id="supplySearch" placeholder="Search supply ID or customer...">
+      <div><button type="button" class="btn" id="openAddSupply" onclick="window.openNewSupplyModal()">+ New Supply Order</button></div>
+    </div>
+    <div class="tablewrap"><table class="table"><thead><tr><th>Supply ID</th><th>Customer</th><th>Date</th><th>Due Date</th><th>IMEI(s)</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody id="supplyBody"></tbody></table></div>
+  </section>
+
+  <!-- Customers Page -->
+  <section id="customers" class="page hidden">
+    <div class="toolbar">
+      <input class="input" id="custSearch" placeholder="Search customer name or phone...">
+      <div><button class="btn" id="openAddCustomer">+ Add Customer</button></div>
+    </div>
+    <div class="tablewrap"><table class="table"><thead><tr><th>Name</th><th>Phone</th><th>Location</th><th>Total Orders</th><th>Total Outstanding Debt</th></tr></thead><tbody id="custBody"></tbody></table></div>
+  </section>
+
+  <!-- Returns Page -->
+  <section id="returns" class="page hidden">
+    <div class="toolbar">
+      <input class="input" id="returnSearch" placeholder="Search return IMEI...">
+      <div><button class="btn" id="openAddReturn">+ Log Return / Repair</button></div>
+    </div>
+    <div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>IMEI</th><th>Type</th><th>Repair Cost</th><th>Reason / Details</th></tr></thead><tbody id="returnBody"></tbody></table></div>
+  </section>
+
+  <!-- Suppliers Page -->
+  <section id="suppliers" class="page hidden">
+    <div class="toolbar">
+      <input class="input" id="supplierSearch" placeholder="Search supplier...">
+      <div><button class="btn" id="openAddSupplier">+ Add Supplier</button></div>
+    </div>
+    <div class="tablewrap"><table class="table"><thead><tr><th>Supplier Name</th><th>Contact Person</th><th>Phone</th><th>Notes</th></tr></thead><tbody id="supplierBody"></tbody></table></div>
+  </section>
+
+  <!-- Expenses Page -->
+  <section id="expenses" class="page hidden">
+    <div class="toolbar">
+      <input class="input" id="expenseSearch" placeholder="Search expenses...">
+      <div><button class="btn" id="openAddExpense">+ Add Expense</button></div>
+    </div>
+    <div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead><tbody id="expenseBody"></tbody></table></div>
+  </section>
+
+  <!-- Associates Page -->
+  <section id="associates" class="page hidden">
+    <div class="toolbar">
+      <input class="input" id="assocSearch" placeholder="Search associate or IMEI...">
+      <div><button class="btn" id="openAddAssoc">+ Assign Phone to Associate</button></div>
+    </div>
+    <div class="tablewrap"><table class="table"><thead><tr><th>Date</th><th>Associate Name</th><th>IMEI</th><th>Model</th><th>Status</th></tr></thead><tbody id="assocBody"></tbody></table></div>
+  </section>
+
+  <!-- User Management Page (Owner Only) -->
+  <section id="users" class="page hidden">
+    <div class="toolbar">
+      <div></div>
+      <div><button class="btn" id="openAddUser">+ Create New User Account</button></div>
+    </div>
+    <div class="tablewrap"><table class="table"><thead><tr><th>Username</th><th>User Role</th><th>Account Status</th></tr></thead><tbody id="userBody"></tbody></table></div>
+  </section>
+
+  <!-- Activity Log Page -->
+  <section id="activity" class="page hidden">
+    <div class="tablewrap"><table class="table"><thead><tr><th>Timestamp</th><th>Action Log</th></tr></thead><tbody id="activityBody"></tbody></table></div>
+  </section>
+</main>
+</div>
+
+<!-- Modal: Add User -->
+<div class="modal" id="mUser"><div class="modalbox"><h2>Create User Account</h2><div class="formgrid">
+<label>Username<input class="input" id="fUserUsername" placeholder="e.g. john_sales"></label>
+<label>Role<select class="input select" id="fUserRole"><option value="staff">Sales Staff</option><option value="owner">Owner / Admin</option></select></label>
+<label>Passcode PIN<input class="input" id="fUserPin" type="password" placeholder="••••"></label>
+</div><div class="actions"><button class="btn secondary modalClose">Cancel</button><button class="btn" id="saveUser">Create User</button></div></div></div>
+
+<!-- Modal: Add Phone -->
+<div class="modal" id="mPhone"><div class="modalbox"><h2>Add New Phone</h2><div class="formgrid">
+<label>IMEI<input class="input" id="fImei" placeholder="15-digit IMEI"></label>
+<label>Model<input class="input" id="fModel" value="iPhone 13"></label>
+<label>Colour<input class="input" id="fColour" placeholder="e.g. Midnight"></label>
+<label>Capacity<input class="input" id="fCapacity" value="128GB"></label>
+<label>Condition<input class="input" id="fCondition" value="Excellent"></label>
+<label>Cost Price (GH₵)<input class="input" id="fCost" type="number"></label>
+</div><div class="actions"><button class="btn secondary modalClose">Cancel</button><button class="btn" id="savePhone">Save Phone</button></div></div></div>
+
+<!-- Modal: New Supply -->
+<div class="modal" id="mSupply"><div class="modalbox"><h2>New Supply Order</h2><div class="formgrid">
+<label>Customer<select class="input select" id="fSupCust"></select></label>
+<label>IMEI Selection<select class="input select" id="fSupImei"></select></label>
+<label>Total Price (GH₵)<input class="input" id="fSupTotal" type="number"></label>
+<label>Amount Paid (GH₵)<input class="input" id="fSupPaid" type="number"></label>
+<label>Payment Due Date<input class="input" id="fSupDue" type="date"></label>
+</div><div class="actions"><button class="btn secondary modalClose">Cancel</button><button class="btn" id="saveSupply">Create Order</button></div></div></div>
+
+<!-- Modal: Add Customer -->
+<div class="modal" id="mCust"><div class="modalbox"><h2>Add Customer</h2><div class="formgrid">
+<label>Customer Name<input class="input" id="fCustName"></label>
+<label>Phone Number<input class="input" id="fCustPhone"></label>
+<label>Location / City<input class="input" id="fCustLoc" value="Accra"></label>
+</div><div class="actions"><button class="btn secondary modalClose">Cancel</button><button class="btn" id="saveCustomer">Save Customer</button></div></div></div>
+
+<!-- Modal: Log Return/Repair -->
+<div class="modal" id="mReturn"><div class="modalbox"><h2>Log Return or Repair</h2><div class="formgrid">
+<label>IMEI<input class="input" id="fRetImei"></label>
+<label>Type<select class="input select" id="fRetType"><option>Repair</option><option>Return</option></select></label>
+<label>Repair Cost (GH₵)<input class="input" id="fRetCost" type="number" value="0"></label>
+<label>Reason / Details<input class="input" id="fRetReason"></label>
+</div><div class="actions"><button class="btn secondary modalClose">Cancel</button><button class="btn" id="saveReturn">Save Entry</button></div></div></div>
+
+<!-- Modal: Add Expense -->
+<div class="modal" id="mExpense"><div class="modalbox"><h2>Log Misc. Expense</h2><div class="formgrid">
+<label>Category<select class="input select" id="fExpCat"><option>Transport</option><option>Utilities</option><option>Rent</option><option>Misc</option></select></label>
+<label>Amount (GH₵)<input class="input" id="fExpAmt" type="number"></label>
+<label>Description<input class="input" id="fExpDesc"></label>
+</div><div class="actions"><button class="btn secondary modalClose">Cancel</button><button class="btn" id="saveExpense">Save Expense</button></div></div></div>
+
+<!-- Modal: Add Supplier -->
+<div class="modal" id="mSupplier"><div class="modalbox"><h2>Add Supplier</h2><div class="formgrid">
+<label>Supplier Name<input class="input" id="fSupName"></label>
+<label>Contact Person<input class="input" id="fSupPerson"></label>
+<label>Phone Number<input class="input" id="fSupPhone"></label>
+<label>Notes<input class="input" id="fSupNotes"></label>
+</div><div class="actions"><button class="btn secondary modalClose">Cancel</button><button class="btn" id="saveSupplier">Save Supplier</button></div></div></div>
+
+<!-- Modal: Assign Associate -->
+<div class="modal" id="mAssoc"><div class="modalbox"><h2>Assign Phone to Associate</h2><div class="formgrid">
+<label>Associate Name<input class="input" id="fAssocName"></label>
+<label>IMEI Selection<select class="input select" id="fAssocImei"></select></label>
+</div><div class="actions"><button class="btn secondary modalClose">Cancel</button><button class="btn" id="saveAssoc">Assign Phone</button></div></div></div>
+
+<script>
+/* Peng Goods Wholesale — offline-first web app
+   Data is stored in this browser using localStorage.
+*/
+const defaultUsers = [
+  { username: 'admin', pin: '1234', role: 'owner' },
+  { username: 'staff', pin: '0000', role: 'staff' }
+];
+
+// Safe storage wrappers for iPhone/local HTML environments.
+const safeStorage = {
+  get(key, fallback=null) { try { const v=localStorage.getItem(key); return v===null?fallback:v; } catch(e) { return fallback; } },
+  set(key,value) { try { localStorage.setItem(key,value); } catch(e) {} },
+  remove(key) { try { localStorage.removeItem(key); } catch(e) {} }
+};
+const safeSession = {
+  get(key, fallback=null) { try { const v=sessionStorage.getItem(key); return v===null?fallback:v; } catch(e) { return fallback; } },
+  set(key,value) { try { sessionStorage.setItem(key,value); } catch(e) {} },
+  remove(key) { try { sessionStorage.removeItem(key); } catch(e) {} }
+};
+
+function readStore(key, fallback=[]) {
+  try {
+    const value = JSON.parse(safeStorage.get(key, JSON.stringify(fallback)));
+    return Array.isArray(value) ? value : fallback;
+  } catch { return fallback; }
+}
+
+let storedUsers = readStore('pgw_users');
+if (!storedUsers.length) storedUsers = defaultUsers.map(x => ({...x}));
+defaultUsers.forEach(d => {
+  if (!storedUsers.some(u => String(u.username).toLowerCase() === d.username.toLowerCase())) {
+    storedUsers.push({...d});
+  }
+});
+
+const state = {
+  currentUser: (() => { try { return JSON.parse(safeSession.get('pgw_session','null') || 'null'); } catch { return null; } })(),
+  users: storedUsers,
+  phones: readStore('pgw_phones'),
+  supplies: readStore('pgw_supplies'),
+  customers: readStore('pgw_customers'),
+  returns: readStore('pgw_returns'),
+  expenses: readStore('pgw_expenses'),
+  suppliers: readStore('pgw_suppliers'),
+  associates: readStore('pgw_associates'),
+  logs: readStore('pgw_logs'),
+  theme: safeStorage.get('pgw_theme','light') || 'light'
+};
+window.pgwState = state;
+
+const $ = id => document.getElementById(id);
+/* Reliable New Supply modal opener — works even if another handler fails to initialize. */
+window.openNewSupplyModal = function () {
+  const modal = document.getElementById('mSupply');
+  const cust = document.getElementById('fSupCust');
+  const imei = document.getElementById('fSupImei');
+  if (!modal) return;
+  const currentState = window.pgwState;
+  if (currentState) {
+    cust.innerHTML = currentState.customers.map(c => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('') || '<option value="">(No customers)</option>';
+    imei.innerHTML = currentState.phones.filter(p => p.status === 'In Stock').map(p => `<option value="${esc(p.imei)}">${esc(p.imei)} - ${esc(p.model)}</option>`).join('') || '<option value="">(No stock)</option>';
+  }
+  modal.classList.add('open');
+};
+const today = () => new Date().toISOString().slice(0,10);
+const money = n => 'GH₵' + Number(n || 0).toLocaleString('en-GH', {
+  minimumFractionDigits: 2, maximumFractionDigits: 2
+});
+const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+}[ch]));
+
+function save() {
+  safeStorage.set('pgw_users', JSON.stringify(state.users));
+  safeStorage.set('pgw_phones', JSON.stringify(state.phones));
+  safeStorage.set('pgw_supplies', JSON.stringify(state.supplies));
+  safeStorage.set('pgw_customers', JSON.stringify(state.customers));
+  safeStorage.set('pgw_returns', JSON.stringify(state.returns));
+  safeStorage.set('pgw_expenses', JSON.stringify(state.expenses));
+  safeStorage.set('pgw_suppliers', JSON.stringify(state.suppliers));
+  safeStorage.set('pgw_associates', JSON.stringify(state.associates));
+  safeStorage.set('pgw_logs', JSON.stringify(state.logs));
+}
+
+function logAction(action) {
+  state.logs.unshift({
+    timestamp: new Date().toLocaleString('en-GB'),
+    text: `[${state.currentUser ? state.currentUser.username.toUpperCase() : 'SYS'}] ${action}`
+  });
+  state.logs = state.logs.slice(0, 500);
+  save();
+}
+
+function processLogin() {
+  const username = $('loginUser').value.trim().toLowerCase();
+  const pin = $('loginPass').value.trim();
+  const user = state.users.find(u => String(u.username).toLowerCase() === username && String(u.pin) === pin);
+
+  if (!user) {
+    $('loginError').style.display = 'block';
+    return;
+  }
+
+  state.currentUser = { username: user.username, role: user.role, loginTime: new Date().toISOString() };
+  safeSession.set('pgw_session', JSON.stringify(state.currentUser));
+  $('loginScreen').style.display = 'none';
+  $('loginError').style.display = 'none';
+  $('loginUser').value = '';
+  $('loginPass').value = '';
+  applyUserPermissions();
+  render();
+  logAction('Logged in');
+}
+
+window.pgwLogin = processLogin;
+$('btnLogin').addEventListener('click', processLogin);
+$('loginPass').addEventListener('keypress', e => { if (e.key === 'Enter') processLogin(); });
+$('loginUser').addEventListener('keypress', e => { if (e.key === 'Enter') processLogin(); });
+
+$('btnLogout').onclick = () => {
+  if (state.currentUser) logAction('Logged out');
+  state.currentUser = null;
+  safeSession.remove('pgw_session');
+  $('loginScreen').style.display = 'flex';
+  document.querySelectorAll('.page').forEach(x => x.classList.add('hidden'));
+  $('dashboard').classList.remove('hidden');
+  document.querySelectorAll('.nav button').forEach(x => x.classList.remove('active'));
+  document.querySelector('.nav button[data-page="dashboard"]').classList.add('active');
+  $('title').textContent = 'Dashboard';
+};
+
+$('theme').onclick = () => {
+  document.body.classList.toggle('dark');
+  state.theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+  safeStorage.set('pgw_theme', state.theme);
+  $('theme').textContent = state.theme === 'dark' ? 'Light mode' : 'Dark mode';
+};
+
+function applyUserPermissions() {
+  if (!state.currentUser) return;
+  const owner = state.currentUser.role === 'owner';
+  $('userBadge').textContent = `User: ${state.currentUser.username} (${owner ? 'Owner' : 'Staff'})`;
+  document.querySelectorAll('.owner-only').forEach(el => el.style.display = owner ? '' : 'none');
+  $('navExpenses').style.display = owner ? '' : 'none';
+  $('navUsers').style.display = owner ? '' : 'none';
+  $('navActivity').style.display = owner ? '' : 'none';
+
+  // If a staff user somehow has a restricted page open, send them home.
+  const current = document.querySelector('.nav button.active');
+  if (!owner && current && ['expenses','users','activity'].includes(current.dataset.page)) {
+    document.querySelector('.nav button[data-page="dashboard"]').click();
+  }
+}
+
+function statusClass(status) {
+  return status === 'In Stock' ? 'green' : status === 'Supplied' ? 'yellow' : 'yellow';
+}
+
+function render(filter={}) {
+  if (!state.currentUser) return;
+  const owner = state.currentUser.role === 'owner';
+
+  const stock = state.phones.filter(p => p.status === 'In Stock').length;
+  const supplied = state.phones.filter(p => p.status === 'Supplied').length;
+  const totalVal = state.supplies.reduce((a,s) => a + Number(s.total || 0), 0);
+  const totalPaid = state.supplies.reduce((a,s) => a + Number(s.paid || 0), 0);
+  const totalDebt = Math.max(0, totalVal - totalPaid);
+  const overdueVal = state.supplies
+    .filter(s => Number(s.balance || 0) > 0 && s.due && s.due < today())
+    .reduce((a,s) => a + Number(s.balance || 0), 0);
+  const totalRepairs = state.returns.reduce((a,r) => a + Number(r.cost || 0), 0);
+  const totalMiscExp = state.expenses.reduce((a,e) => a + Number(e.amount || 0), 0);
+
+  // Profit is based on completed/supplied orders, not every phone sitting in stock.
+  const soldPhoneCost = state.supplies.reduce((sum, s) => {
+    const phone = state.phones.find(p => p.imei === s.imei);
+    return sum + Number(phone?.cost || 0);
+  }, 0);
+  const profit = totalVal - soldPhoneCost - totalRepairs - totalMiscExp;
+
+  $('mStock').textContent = stock;
+  $('mSupplied').textContent = supplied;
+  $('mSupplyValue').textContent = money(totalVal);
+  $('mDebt').textContent = money(totalDebt);
+  $('mOverdue').textContent = money(overdueVal);
+  $('mRepair').textContent = money(totalRepairs);
+  $('mMisc').textContent = money(totalMiscExp);
+  $('mProfit').textContent = money(profit);
+  $('todaySupplies').textContent = state.supplies.filter(s => s.date === today()).length;
+  $('todayPayments').textContent = money(state.supplies.filter(s => s.date === today()).reduce((a,s) => a + Number(s.paid || 0), 0));
+  $('todayPhones').textContent = state.phones.filter(p => p.date === today()).length;
+  $('todayReturns').textContent = state.returns.filter(r => r.date === today()).length;
+
+  const q = v => String(v || '').toLowerCase();
+  const invQ = q(filter.inv);
+  const supQ = q(filter.supply);
+  const custQ = q(filter.cust);
+  const retQ = q(filter.ret);
+  const supplierQ = q(filter.supplier);
+  const expQ = q(filter.expense);
+  const assocQ = q(filter.assoc);
+
+  const phones = state.phones.filter(p => !invQ || [p.imei,p.model,p.colour,p.capacity,p.condition,p.status].some(v => q(v).includes(invQ)));
+  $('invBody').innerHTML = phones.map(p => `<tr>
+    <td>${esc(p.imei)}</td><td>${esc(p.model)}</td><td>${esc(p.colour)}</td><td>${esc(p.capacity)}</td>
+    <td>${esc(p.condition)}</td>${owner ? `<td>${money(p.cost)}</td>` : ''}
+    <td><span class="pill ${statusClass(p.status)}">${esc(p.status)}</span></td>
+  </tr>`).join('') || `<tr><td colspan="${owner ? 7 : 6}" class="empty">No matching phones.</td></tr>`;
+
+  const supplies = state.supplies.filter(s => !supQ || [s.id,s.customer,s.imei,s.date,s.due].some(v => q(v).includes(supQ)));
+  $('supplyBody').innerHTML = supplies.map(s => {
+    const balance = Math.max(0, Number(s.total||0) - Number(s.paid||0));
+    const overdue = balance > 0 && s.due && s.due < today();
+    return `<tr><td>${esc(s.id)}</td><td>${esc(s.customer)}</td><td>${esc(s.date)}</td><td>${esc(s.due || '-')}</td>
+      <td>${esc(s.imei)}</td><td>${money(s.total)}</td><td>${money(s.paid)}</td><td>${money(balance)}</td>
+      <td><span class="pill ${balance<=0?'green':overdue?'red':'yellow'}">${balance<=0?'Fully Paid':overdue?'Overdue':'Partially Paid'}</span></td></tr>`;
+  }).join('') || '<tr><td colspan="9" class="empty">No matching supply orders.</td></tr>';
+
+  const customers = state.customers.filter(c => !custQ || [c.name,c.phone,c.location].some(v => q(v).includes(custQ)));
+  $('custBody').innerHTML = customers.map(c => {
+    const orders = state.supplies.filter(s => s.customer === c.name);
+    const debt = orders.reduce((a,s) => a + Math.max(0, Number(s.total||0)-Number(s.paid||0)), 0);
+    return `<tr><td>${esc(c.name)}</td><td>${esc(c.phone)}</td><td>${esc(c.location)}</td><td>${orders.length}</td><td>${money(debt)}</td></tr>`;
+  }).join('') || '<tr><td colspan="5" class="empty">No matching customers.</td></tr>';
+
+  const returns = state.returns.filter(r => !retQ || [r.imei,r.type,r.reason,r.date].some(v => q(v).includes(retQ)));
+  $('returnBody').innerHTML = returns.map(r => `<tr><td>${esc(r.date)}</td><td>${esc(r.imei)}</td>
+    <td><span class="pill ${r.type==='Return'?'red':'yellow'}">${esc(r.type)}</span></td><td>${money(r.cost)}</td><td>${esc(r.reason)}</td></tr>`
+  ).join('') || '<tr><td colspan="5" class="empty">No matching returns.</td></tr>';
+
+  const suppliers = state.suppliers.filter(s => !supplierQ || [s.name,s.person,s.phone,s.notes].some(v => q(v).includes(supplierQ)));
+  $('supplierBody').innerHTML = suppliers.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.person)}</td><td>${esc(s.phone)}</td><td>${esc(s.notes || '-')}</td></tr>`
+  ).join('') || '<tr><td colspan="4" class="empty">No matching suppliers.</td></tr>';
+
+  const expenses = state.expenses.filter(e => !expQ || [e.category,e.desc,e.date,e.amount].some(v => q(v).includes(expQ)));
+  $('expenseBody').innerHTML = expenses.map(e => `<tr><td>${esc(e.date)}</td><td>${esc(e.category)}</td><td>${esc(e.desc)}</td><td>${money(e.amount)}</td></tr>`
+  ).join('') || '<tr><td colspan="4" class="empty">No matching expenses.</td></tr>';
+
+  const associates = state.associates.filter(a => !assocQ || [a.name,a.imei,a.model,a.status].some(v => q(v).includes(assocQ)));
+  $('assocBody').innerHTML = associates.map(a => `<tr><td>${esc(a.date)}</td><td>${esc(a.name)}</td><td>${esc(a.imei)}</td><td>${esc(a.model)}</td><td><span class="pill yellow">${esc(a.status)}</span></td></tr>`
+  ).join('') || '<tr><td colspan="5" class="empty">No matching assignments.</td></tr>';
+
+  $('userBody').innerHTML = state.users.map(u => `<tr><td>${esc(u.username)}</td><td><span class="pill ${u.role==='owner'?'green':'yellow'}">${esc(u.role.toUpperCase())}</span></td><td>Active</td></tr>`).join('');
+  $('activityBody').innerHTML = state.logs.map(l => `<tr><td style="width:180px">${esc(l.timestamp)}</td><td>${esc(l.text)}</td></tr>`).join('')
+    || '<tr><td colspan="2" class="empty">No events logged.</td></tr>';
+}
+
+document.querySelectorAll('.nav button').forEach(b => b.onclick = () => {
+  const restricted = ['expenses','users','activity'].includes(b.dataset.page);
+  if (restricted && state.currentUser?.role !== 'owner') return;
+  document.querySelectorAll('.nav button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.page').forEach(x => x.classList.add('hidden'));
+  $(b.dataset.page).classList.remove('hidden');
+  $('title').textContent = b.textContent;
+});
+
+const openModal = id => $(id).classList.add('open');
+const closeModal = () => document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
+document.querySelectorAll('.modalClose').forEach(b => b.onclick = closeModal);
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(); }));
+
+$('openAddPhone').onclick = () => openModal('mPhone');
+$('openAddCustomer').onclick = () => openModal('mCust');
+$('openAddExpense').onclick = () => openModal('mExpense');
+$('openAddReturn').onclick = () => openModal('mReturn');
+$('openAddSupplier').onclick = () => openModal('mSupplier');
+$('openAddUser').onclick = () => openModal('mUser');
+
+$('openAddSupply').onclick = window.openNewSupplyModal;
+
+$('openAddAssoc').onclick = () => {
+  $('fAssocImei').innerHTML = state.phones.filter(p => p.status === 'In Stock').map(p => `<option value="${esc(p.imei)}">${esc(p.imei)} - ${esc(p.model)}</option>`).join('') || '<option value="">(No stock)</option>';
+  openModal('mAssoc');
+};
+
+$('saveUser').onclick = () => {
+  const username = $('fUserUsername').value.trim().toLowerCase();
+  const pin = $('fUserPin').value.trim();
+  const role = $('fUserRole').value;
+  if (!username || !pin) return alert('Username and PIN are required.');
+  if (!/^\d{4,6}$/.test(pin)) return alert('PIN must be 4 to 6 digits.');
+  if (state.users.some(u => String(u.username).toLowerCase() === username)) return alert('Username already exists.');
+  state.users.push({username,pin,role});
+  logAction(`Created account: ${username} (${role})`);
+  render(); closeModal();
+  $('fUserUsername').value = ''; $('fUserPin').value = '';
+};
+
+$('savePhone').onclick = () => {
+  const p = {
+    imei: $('fImei').value.trim(), model: $('fModel').value.trim(),
+    colour: $('fColour').value.trim(), capacity: $('fCapacity').value.trim(),
+    condition: $('fCondition').value.trim(), cost: Number($('fCost').value || 0),
+    status: 'In Stock', date: today()
+  };
+  if (!/^\d{10,20}$/.test(p.imei)) return alert('Enter a valid IMEI/serial number (10–20 digits).');
+  if (!p.model) return alert('Model is required.');
+  if (state.phones.some(x => x.imei === p.imei)) return alert('Duplicate IMEI.');
+  state.phones.push(p); logAction(`Added phone IMEI ${p.imei}`); render(); closeModal();
+  ['fImei','fColour','fCost'].forEach(id => $(id).value = '');
+};
+
+$('saveCustomer').onclick = () => {
+  const c = {name:$('fCustName').value.trim(), phone:$('fCustPhone').value.trim(), location:$('fCustLoc').value.trim()};
+  if (!c.name) return alert('Customer name is required.');
+  if (!c.phone) return alert('Customer phone number is required.');
+  state.customers.push(c); logAction(`Added customer ${c.name}`); render(); closeModal();
+  ['fCustName','fCustPhone'].forEach(id => $(id).value = '');
+};
+
+$('saveSupply').onclick = () => {
+  const cust = $('fSupCust').value;
+  const imeiVal = $('fSupImei').value;
+  const total = Number($('fSupTotal').value || 0);
+  const paid = Number($('fSupPaid').value || 0);
+  const due = $('fSupDue').value;
+  if (!cust || !imeiVal) return alert('Customer and IMEI are required.');
+  if (total <= 0) return alert('Total price must be greater than zero.');
+  if (paid < 0 || paid > total) return alert('Amount paid cannot exceed the total price.');
+  if (!due) return alert('Payment due date is required.');
+
+  const s = {id:'SUP-'+Date.now().toString().slice(-8),customer:cust,imei:imeiVal,total,paid,balance:Math.max(0,total-paid),date:today(),due};
+  state.supplies.push(s);
+  const phone = state.phones.find(p => p.imei === imeiVal);
+  if (phone) phone.status = 'Supplied';
+  logAction(`Supply order ${s.id} created`); render(); closeModal();
+  ['fSupTotal','fSupPaid','fSupDue'].forEach(id => $(id).value = '');
+};
+
+$('saveReturn').onclick = () => {
+  const imei = $('fRetImei').value.trim();
+  if (!imei) return alert('IMEI is required.');
+  const r = {imei,type:$('fRetType').value,cost:Number($('fRetCost').value || 0),reason:$('fRetReason').value.trim(),date:today()};
+  state.returns.push(r);
+  const phone = state.phones.find(p => p.imei === imei);
+  if (phone && r.type === 'Return') phone.status = 'In Stock';
+  logAction(`Logged ${r.type} for IMEI ${imei}`); render(); closeModal();
+  ['fRetImei','fRetCost','fRetReason'].forEach(id => $(id).value = '');
+};
+
+$('saveExpense').onclick = () => {
+  const amount = Number($('fExpAmt').value || 0);
+  if (amount <= 0) return alert('Amount must be greater than zero.');
+  const e = {category:$('fExpCat').value,amount,desc:$('fExpDesc').value.trim(),date:today()};
+  state.expenses.push(e); logAction(`Logged expense ${money(amount)}`); render(); closeModal();
+  ['fExpAmt','fExpDesc'].forEach(id => $(id).value = '');
+};
+
+$('saveSupplier').onclick = () => {
+  const s = {name:$('fSupName').value.trim(),person:$('fSupPerson').value.trim(),phone:$('fSupPhone').value.trim(),notes:$('fSupNotes').value.trim()};
+  if (!s.name) return alert('Supplier name is required.');
+  state.suppliers.push(s); logAction(`Added supplier ${s.name}`); render(); closeModal();
+  ['fSupName','fSupPerson','fSupPhone','fSupNotes'].forEach(id => $(id).value = '');
+};
+
+$('saveAssoc').onclick = () => {
+  const name = $('fAssocName').value.trim();
+  const imeiVal = $('fAssocImei').value;
+  if (!name || !imeiVal) return alert('Associate name and phone are required.');
+  const phone = state.phones.find(p => p.imei === imeiVal);
+  if (!phone || phone.status !== 'In Stock') return alert('That phone is no longer available.');
+  phone.status = 'With Associate';
+  state.associates.push({name,imei:imeiVal,model:phone.model,status:'With Associate',date:today()});
+  logAction(`Assigned IMEI ${imeiVal} to associate ${name}`); render(); closeModal();
+  $('fAssocName').value = '';
+};
+
+/* Live search */
+[
+  ['invSearch','inv'],['supplySearch','supply'],['custSearch','cust'],['returnSearch','ret'],
+  ['supplierSearch','supplier'],['expenseSearch','expense'],['assocSearch','assoc']
+].forEach(([id,key]) => $(id).addEventListener('input', e => render({[key]:e.target.value})));
+
+if (state.theme === 'dark') document.body.classList.add('dark');
+$('theme').textContent = state.theme === 'dark' ? 'Light mode' : 'Dark mode';
+save();
+
+if (state.currentUser) {
+  $('loginScreen').style.display = 'none';
+  applyUserPermissions();
+  render();
+}
+</script>
+</body>
+</html>
