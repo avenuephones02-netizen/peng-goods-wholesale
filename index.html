@@ -484,10 +484,7 @@ async function initCloudSync() {
         }
       }
     )
-    .subscribe();
-}
-}
-
+      .subscribe();
 async function loadCurrentUser() {
   if (!supabaseClient) return null;
   const { data: { user }, error } = await supabaseClient.auth.getUser();
