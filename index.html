@@ -699,8 +699,8 @@ const editSchemas = {
 let editContext = null;
 
 function editButton(type, key) {
-  return `<button class="btn secondary editBtn" type="button" onclick="openEdit('${type}', ${JSON.stringify(String(key))})">Edit</button>`;
-}
+  return `<button class="btn secondary editBtn" type="button" data-edit-type="${esc(type)}" data-edit-key="${esc(String(key))}">Edit</button>`;
+} 
 window.openEdit = function(type, key) {
   const listMap = {phone:'phones', supply:'supplies', customer:'customers', return:'returns', supplier:'suppliers', expense:'expenses', associate:'associates', user:'users'};
   const list = state[listMap[type]];
