@@ -441,21 +441,51 @@ async function loadCloudData() {
   return true;
 }
 
+let cloudChannel = null;
+
 async function initCloudSync() {
   if (!supabaseClient) return;
-  supabaseClient.channel('pgw-app-data')
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pgw_app_data', filter: 'id=eq.1' },
+
+  // Prevent creating the same realtime subscription more than once
+  if (cloudChannel) {
+    try {
+      await supabaseClient.removeChannel(cloudChannel);
+    } catch (e) {
+      console.warn('Could not remove old realtime channel:', e);
+    }
+    cloudChannel = null;
+  }
+
+  cloudChannel = supabaseClient
+    .channel('pgw-app-data')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'pgw_app_data',
+        filter: 'id=eq.1'
+      },
       payload => {
         if (!payload.new?.data || payload.new.updated_at === lastCloudUpdatedAt) return;
+
         applyingRemote = true;
         applyData(payload.new.data);
         lastCloudUpdatedAt = payload.new.updated_at;
         applyingRemote = false;
+
         render();
-        $('cloudStatus') && ($('cloudStatus').textContent = 'Updated from another device');
-        setTimeout(() => { if ($('cloudStatus')) $('cloudStatus').textContent = 'Synced'; }, 2500);
-      })
+
+        if ($('cloudStatus')) {
+          $('cloudStatus').textContent = 'Updated from another device';
+          setTimeout(() => {
+            if ($('cloudStatus')) $('cloudStatus').textContent = 'Synced';
+          }, 2500);
+        }
+      }
+    )
     .subscribe();
+}
 }
 
 async function loadCurrentUser() {
