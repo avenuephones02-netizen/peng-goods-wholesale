@@ -483,8 +483,10 @@ async function initCloudSync() {
           }, 2500);
         }
       }
-    )
+          )
       .subscribe();
+}
+
 async function loadCurrentUser() {
   if (!supabaseClient) return null;
   const { data: { user }, error } = await supabaseClient.auth.getUser();
