@@ -477,6 +477,13 @@ async function loadCurrentUser() {
 }
 
 const $ = id => document.getElementById(id);
+  const $ = id => document.getElementById(id);
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.editBtn');
+  if (!btn) return;
+  window.openEdit(btn.dataset.editType, btn.dataset.editKey);
+});
 /* Reliable New Supply modal opener — works even if another handler fails to initialize. */
 window.openNewSupplyModal = function () {
   const modal = document.getElementById('mSupply');
