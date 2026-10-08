@@ -542,6 +542,8 @@ function save() {
   safeStorage.set('pgw_suppliers', JSON.stringify(state.suppliers));
   safeStorage.set('pgw_associates', JSON.stringify(state.associates));
   safeStorage.set('pgw_logs', JSON.stringify(state.logs));
+
+  cloudSaveQueue = cloudSaveQueue.then(cloudSave).catch(console.error);
 }
 
 function logAction(action) {
