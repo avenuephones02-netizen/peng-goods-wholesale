@@ -766,12 +766,25 @@ window.openEdit = function(type, key) {
 
 $('saveEdit').onclick = () => {
   if (!editContext) return;
+
   const item = state[editContext.listKey][editContext.index];
+
   document.querySelectorAll('#editFields .editField').forEach(input => {
     const key = input.dataset.key;
-    item[key] = input.type === 'number' ? Number(input.value || 0) : input.value.trim();
+    item[key] = input.type === 'number'
+      ? Number(input.value || 0)
+      : input.value.trim();
   });
+
+  // Always recalculate supply balance after editing
+  if (editContext.type === 'supply') {
+    item.total = Number(item.total || 0);
+    item.paid = Number(item.paid || 0);
+    item.balance = Math.max(0, item.total - item.paid);
+  }
+
   logAction(`Edited ${editContext.type} record`);
+  save();
   render();
   closeModal();
   editContext = null;
