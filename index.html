@@ -131,6 +131,7 @@ body.dark .btn{background:#38bdf8;color:#0f172a;border-color:#38bdf8}
     <button class="active" data-page="dashboard">Dashboard</button>
     <button data-page="inventory">Inventory</button>
     <button data-page="supplies">Supplies</button>
+    <button data-page="installments">Installment</button>
     <button data-page="customers">Customers</button>
     <button data-page="returns">Returns & Repairs</button>
     <button data-page="suppliers">Suppliers</button>
@@ -185,6 +186,17 @@ body.dark .btn{background:#38bdf8;color:#0f172a;border-color:#38bdf8}
       <div><button type="button" class="btn" id="openAddSupply" onclick="window.openNewSupplyModal()">+ New Supply Order</button></div>
     </div>
     <div class="tablewrap"><table class="table"><thead><tr><th>Supply ID</th><th>Customer</th><th>Date</th><th>Due Date</th><th>IMEI(s)</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead><tbody id="supplyBody"></tbody></table></div>
+  </section>
+
+  <!-- Installment Tracking Page -->
+  <section id="installments" class="page hidden">
+    <div class="toolbar">
+      <input class="input" id="installmentSearch" placeholder="Search customer, model, capacity or IMEI...">
+      <div><button type="button" class="btn" id="openAddInstallment">+ New Installment Record</button></div>
+    </div>
+    <div class="tablewrap"><table class="table"><thead><tr>
+      <th>Date Taken</th><th>Customer / Recipient</th><th>Model</th><th>Capacity</th><th>Phones Taken</th><th>IMEIs Taken</th><th>Phones Returned</th><th>IMEIs Returned</th><th>Return Date</th><th>Notes</th><th>Action</th>
+    </tr></thead><tbody id="installmentBody"></tbody></table></div>
   </section>
 
   <!-- Customers Page -->
@@ -286,6 +298,20 @@ body.dark .btn{background:#38bdf8;color:#0f172a;border-color:#38bdf8}
 <label>Payment Due Date<input class="input" id="fSupDue" type="date"></label>
 </div><div class="actions"><button class="btn secondary modalClose">Cancel</button><button class="btn" id="saveSupply">Create Order</button></div></div></div>
 
+<!-- Modal: Add Installment Record -->
+<div class="modal" id="mInstallment"><div class="modalbox"><h2>New Installment Record</h2><div class="formgrid">
+<label>Date Taken<input class="input" id="fInstDate" type="date"></label>
+<label>Customer / Recipient<input class="input" id="fInstCustomer" placeholder="Name or business"></label>
+<label>Phone Model<input class="input" id="fInstModel" placeholder="e.g. iPhone 13"></label>
+<label>Capacity<input class="input" id="fInstCapacity" placeholder="e.g. 128GB"></label>
+<label>Phones Taken (quantity)<input class="input" id="fInstTaken" type="number" min="1" step="1" value="1"></label>
+<label>IMEIs Taken (comma-separated)<input class="input" id="fInstImeisTaken" placeholder="Enter IMEIs separated by commas"></label>
+<label>Phones Returned (quantity)<input class="input" id="fInstReturned" type="number" min="0" step="1" value="0"></label>
+<label>IMEIs Returned (comma-separated)<input class="input" id="fInstImeisReturned" placeholder="Enter returned IMEIs, if any"></label>
+<label>Return Date<input class="input" id="fInstReturnDate" type="date"></label>
+<label>Notes<input class="input" id="fInstNotes" placeholder="Optional notes"></label>
+</div><div class="actions"><button class="btn secondary modalClose" type="button">Cancel</button><button class="btn" id="saveInstallment" type="button">Save Installment</button></div></div></div>
+
 <!-- Modal: Add Customer -->
 <div class="modal" id="mCust"><div class="modalbox"><h2>Add Customer</h2><div class="formgrid">
 <label>Customer Name<input class="input" id="fCustName"></label>
@@ -354,6 +380,7 @@ const state = {
   users: [],
   phones: readStore('pgw_phones'),
   supplies: readStore('pgw_supplies'),
+  installments: readStore('pgw_installments'),
   customers: readStore('pgw_customers'),
   returns: readStore('pgw_returns'),
   expenses: readStore('pgw_expenses'),
@@ -384,6 +411,7 @@ function snapshotData() {
     users: state.users,
     phones: state.phones,
     supplies: state.supplies,
+    installments: state.installments,
     customers: state.customers,
     returns: state.returns,
     expenses: state.expenses,
@@ -417,6 +445,7 @@ async function cloudSave() {
 function save() {
   safeStorage.set('pgw_phones', JSON.stringify(state.phones));
   safeStorage.set('pgw_supplies', JSON.stringify(state.supplies));
+  safeStorage.set('pgw_installments', JSON.stringify(state.installments));
   safeStorage.set('pgw_customers', JSON.stringify(state.customers));
   safeStorage.set('pgw_returns', JSON.stringify(state.returns));
   safeStorage.set('pgw_expenses', JSON.stringify(state.expenses));
@@ -727,6 +756,11 @@ const editSchemas = {
     ['id','Supply ID','text'],['customer','Customer','text'],['date','Date','date'],['due','Due Date','date'],
     ['imei','IMEI(s)','text'],['total','Total','number'],['paid','Paid','number']
   ],
+  installment: [
+    ['dateTaken','Date Taken','date'],['customer','Customer / Recipient','text'],['model','Model','text'],['capacity','Capacity','text'],
+    ['phonesTaken','Phones Taken','number'],['imeisTaken','IMEIs Taken (comma-separated)','text'],['phonesReturned','Phones Returned','number'],
+    ['imeisReturned','IMEIs Returned (comma-separated)','text'],['returnDate','Return Date','date'],['notes','Notes','text']
+  ],
   customer: [['name','Name','text'],['phone','Phone','text'],['location','Location','text']],
   return: [['date','Date','date'],['imei','IMEI','text'],['type','Type','select:Return|Repair'],['cost','Cost','number'],['reason','Reason','text']],
   supplier: [['name','Supplier Name','text'],['person','Contact Person','text'],['phone','Phone','text'],['notes','Notes','text']],
@@ -736,7 +770,7 @@ const editSchemas = {
 };
 let editContext = null;
 
-const recordListMap = {phone:'phones', supply:'supplies', customer:'customers', return:'returns', supplier:'suppliers', expense:'expenses', associate:'associates', user:'users'};
+const recordListMap = {phone:'phones', supply:'supplies', installment:'installments', customer:'customers', return:'returns', supplier:'suppliers', expense:'expenses', associate:'associates', user:'users'};
 function recordActions(type, item) {
   const index = state[recordListMap[type]].indexOf(item);
   return `<div class="row-actions"><button class="btn secondary editBtn" type="button" data-edit-type="${esc(type)}" data-edit-key="${index}">Edit</button>${state.currentUser?.role === 'owner' ? `<button class="btn danger deleteBtn" type="button" data-edit-type="${esc(type)}" data-edit-key="${index}">Delete</button>` : ''}</div>`;
@@ -747,7 +781,7 @@ window.openEdit = function(type, key) {
   if (!list || !Number.isInteger(index) || index < 0 || index >= list.length) return alert('Record not found. Please refresh and try again.');
   editContext = {type, index, listKey:recordListMap[type]};
   const item = list[index];
-  $('editTitle').textContent = `Edit ${type}`;
+  $('editTitle').textContent = `Edit ${type === 'installment' ? 'Installment' : type}`;
   $('editFields').innerHTML = editSchemas[type].map(([key,label,kind]) => {
     const value = item[key] ?? '';
     if (kind.startsWith('select:')) {
@@ -765,7 +799,7 @@ window.deleteRecord = function(type, key) {
   const index = Number(key);
   if (!list || !Number.isInteger(index) || index < 0 || index >= list.length) return alert('Record not found. Please refresh and try again.');
   const item = list[index];
-  const label = type === 'phone' ? `phone IMEI ${item.imei}` : type === 'supply' ? `supply order ${item.id}` : type === 'customer' ? `customer ${item.name}` : type === 'return' ? `return/repair for IMEI ${item.imei}` : type === 'supplier' ? `supplier ${item.name}` : type === 'expense' ? `expense ${item.desc || item.date}` : type === 'associate' ? `associate assignment for IMEI ${item.imei}` : `user ${item.username}`;
+  const label = type === 'phone' ? `phone IMEI ${item.imei}` : type === 'supply' ? `supply order ${item.id}` : type === 'installment' ? `installment record for ${item.customer || item.model || 'phone'}` : type === 'customer' ? `customer ${item.name}` : type === 'return' ? `return/repair for IMEI ${item.imei}` : type === 'supplier' ? `supplier ${item.name}` : type === 'expense' ? `expense ${item.desc || item.date}` : type === 'associate' ? `associate assignment for IMEI ${item.imei}` : `user ${item.username}`;
   if (!confirm(`Delete ${label}? This cannot be undone. Related records may need to be checked manually.`)) return;
   if (type === 'phone') {
     const linkedSupply = state.supplies.some(x => String(x.imei) === String(item.imei));
@@ -847,6 +881,7 @@ function render(filter={}) {
   const q = v => String(v || '').toLowerCase();
   const invQ = q(filter.inv);
   const supQ = q(filter.supply);
+  const instQ = q(filter.installment);
   const custQ = q(filter.cust);
   const retQ = q(filter.ret);
   const supplierQ = q(filter.supplier);
@@ -870,6 +905,12 @@ function render(filter={}) {
       <td><span class="pill ${balance<=0?'green':overdue?'red':'yellow'}">${balance<=0?'Fully Paid':overdue?'Overdue':'Partially Paid'}</span></td>
       <td>${recordActions('supply', s)}</td></tr>`;
   }).join('') || '<tr><td colspan="10" class="empty">No matching supply orders.</td></tr>';
+
+  const installments = state.installments.filter(i => !instQ || [i.dateTaken,i.customer,i.model,i.capacity,i.phonesTaken,i.imeisTaken,i.phonesReturned,i.imeisReturned,i.returnDate,i.notes].some(v => q(v).includes(instQ)));
+  $('installmentBody').innerHTML = installments.map(i => `<tr>
+    <td>${esc(i.dateTaken || '-')}</td><td>${esc(i.customer || '-')}</td><td>${esc(i.model || '-')}</td><td>${esc(i.capacity || '-')}</td>
+    <td>${Number(i.phonesTaken || 0)}</td><td>${esc(i.imeisTaken || '-')}</td><td>${Number(i.phonesReturned || 0)}</td><td>${esc(i.imeisReturned || '-')}</td><td>${esc(i.returnDate || '-')}</td><td>${esc(i.notes || '-')}</td><td>${recordActions('installment', i)}</td></tr>`
+  ).join('') || '<tr><td colspan="11" class="empty">No installment records yet.</td></tr>';
 
   const customers = state.customers.filter(c => !custQ || [c.name,c.phone,c.location].some(v => q(v).includes(custQ)));
   $('custBody').innerHTML = customers.map(c => {
@@ -956,6 +997,37 @@ $('savePhone').onclick = () => {
   ['fImei','fColour','fCost'].forEach(id => $(id).value = '');
 };
 
+$('openAddInstallment').onclick = () => {
+  $('fInstDate').value = today();
+  $('fInstReturnDate').value = '';
+  $('mInstallment').classList.add('open');
+};
+
+$('saveInstallment').onclick = () => {
+  const record = {
+    dateTaken: $('fInstDate').value || today(),
+    customer: $('fInstCustomer').value.trim(),
+    model: $('fInstModel').value.trim(),
+    capacity: $('fInstCapacity').value.trim(),
+    phonesTaken: Number($('fInstTaken').value || 0),
+    imeisTaken: $('fInstImeisTaken').value.trim(),
+    phonesReturned: Number($('fInstReturned').value || 0),
+    imeisReturned: $('fInstImeisReturned').value.trim(),
+    returnDate: $('fInstReturnDate').value,
+    notes: $('fInstNotes').value.trim()
+  };
+  if (!record.model) return alert('Phone model is required.');
+  if (!record.capacity) return alert('Phone capacity is required.');
+  if (!Number.isInteger(record.phonesTaken) || record.phonesTaken < 1) return alert('Phones taken must be a whole number of at least 1.');
+  if (!Number.isInteger(record.phonesReturned) || record.phonesReturned < 0 || record.phonesReturned > record.phonesTaken) return alert('Phones returned must be a whole number between 0 and phones taken.');
+  if (record.phonesReturned > 0 && !record.returnDate) return alert('Enter the return date for returned phones.');
+  state.installments.push(record);
+  logAction(`Added installment record: ${record.phonesTaken} ${record.model} phone(s) for ${record.customer || 'recipient'}`);
+  render(); closeModal();
+  ['fInstCustomer','fInstModel','fInstCapacity','fInstImeisTaken','fInstImeisReturned','fInstNotes','fInstReturnDate'].forEach(id => $(id).value = '');
+  $('fInstTaken').value = '1'; $('fInstReturned').value = '0'; $('fInstDate').value = today();
+};
+
 $('saveCustomer').onclick = () => {
   const c = {name:$('fCustName').value.trim(), phone:$('fCustPhone').value.trim(), location:$('fCustLoc').value.trim()};
   if (!c.name) return alert('Customer name is required.');
@@ -1023,7 +1095,7 @@ $('saveAssoc').onclick = () => {
 
 /* Live search */
 [
-  ['invSearch','inv'],['supplySearch','supply'],['custSearch','cust'],['returnSearch','ret'],
+  ['invSearch','inv'],['supplySearch','supply'],['installmentSearch','installment'],['custSearch','cust'],['returnSearch','ret'],
   ['supplierSearch','supplier'],['expenseSearch','expense'],['assocSearch','assoc']
 ].forEach(([id,key]) => $(id).addEventListener('input', e => render({[key]:e.target.value})));
 
